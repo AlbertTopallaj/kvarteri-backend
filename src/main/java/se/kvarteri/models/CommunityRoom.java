@@ -17,4 +17,6 @@ public class CommunityRoom {
     private UUID id;
 
     private String name;
+
+    private int price;
 }
