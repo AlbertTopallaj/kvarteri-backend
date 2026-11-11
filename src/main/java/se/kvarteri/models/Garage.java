@@ -20,5 +20,5 @@ public class Garage {
 
     private int price;
 
-
+    private Resident owner;
 }
