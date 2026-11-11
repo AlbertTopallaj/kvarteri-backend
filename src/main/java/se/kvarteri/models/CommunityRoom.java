@@ -24,4 +24,6 @@ public class CommunityRoom {
     private int capacity;
 
     private LocalDateTime bookedTime;
+
+    private Resident tenant;
 }
