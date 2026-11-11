@@ -1,7 +1,6 @@
 package se.kvarteri.models;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,5 +12,7 @@ import java.util.UUID;
 @Setter
 public class CommunityRoom {
 
+    @Id
+    @GeneratedValue(strategy=GenerationType.UUID)
     private UUID id;
 }
