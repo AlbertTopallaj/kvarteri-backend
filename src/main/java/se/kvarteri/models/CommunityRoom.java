@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -21,4 +22,6 @@ public class CommunityRoom {
     private int price;
 
     private int capacity;
+
+    private LocalDateTime bookedTime;
 }
