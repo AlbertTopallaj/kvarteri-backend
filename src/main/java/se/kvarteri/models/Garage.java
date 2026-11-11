@@ -18,5 +18,7 @@ public class Garage {
 
     private int garageNumber;
 
+    private int price;
+
 
 }
