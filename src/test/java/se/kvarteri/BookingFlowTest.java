@@ -29,6 +29,7 @@ class BookingFlowTest {
     @Autowired TicketReplyRepository replies;
     @Autowired TicketRepository tickets;
     @Autowired MessageRepository messages;
+    @Autowired NotificationRepository notificationRepo;
     @Autowired ParkingSpotRepository parkings;
     @Autowired SpotQueueEntryRepository spotQueue;
     @Autowired PasswordEncoder encoder;
@@ -39,6 +40,7 @@ class BookingFlowTest {
     void cleanUp() {
         bookings.deleteAll();
         replies.deleteAll();
+        notificationRepo.deleteAll();
         tickets.deleteAll();
         messages.deleteAll();
         spotQueue.deleteAll();
@@ -52,6 +54,7 @@ class BookingFlowTest {
         mvc = MockMvcBuilders.webAppContextSetup(ctx).apply(springSecurity()).build();
         bookings.deleteAll();
         replies.deleteAll();
+        notificationRepo.deleteAll();
         tickets.deleteAll();
         messages.deleteAll();
         spotQueue.deleteAll();
@@ -125,7 +128,7 @@ class BookingFlowTest {
         mvc.perform(post(url).with(httpBasic("board@test.se", "password123")).contentType(MediaType.APPLICATION_JSON)
                 .content(body)).andExpect(status().isCreated());
         mvc.perform(get(url).with(httpBasic("a@test.se", "password123"))).andExpect(status().isOk());
-        mvc.perform(post("/api/tickets/" + t.getId() + "/close").with(httpBasic("board@test.se", "password123")))
+        mvc.perform(patch("/api/tickets/" + t.getId()).contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"DONE\"}").with(httpBasic("board@test.se", "password123")))
                 .andExpect(status().isOk());
         mvc.perform(post(url).with(httpBasic("a@test.se", "password123")).contentType(MediaType.APPLICATION_JSON)
                 .content(body)).andExpect(status().isConflict());

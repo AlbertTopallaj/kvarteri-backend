@@ -14,6 +14,8 @@ public interface BookingRepository extends JpaRepository<Booking, UUID> {
     boolean existsByResourceTypeAndResourceIdAndStartTimeLessThanAndEndTimeGreaterThan(
             ResourceType type, UUID resourceId, LocalDateTime end, LocalDateTime start);
 
+    void deleteByResident(se.kvarteri.models.Resident resident);
+
     List<Booking> findByResourceTypeAndResourceIdAndEndTimeAfterOrderByStartTime(
             ResourceType type, UUID resourceId, LocalDateTime after);
 }

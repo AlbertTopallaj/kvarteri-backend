@@ -11,4 +11,10 @@ public interface ResidentRepository extends JpaRepository<Resident, UUID> {
     Optional<Resident> findByEmailIgnoreCase(String email);
 
     boolean existsByEmailIgnoreCase(String email);
+
+    java.util.List<Resident> findByRoleAndEnabledTrue(se.kvarteri.models.Role role);
+
+    java.util.List<Resident> findByEnabledTrueOrderByNameAsc();
+
+    long countByRoleAndEnabledTrue(se.kvarteri.models.Role role);
 }

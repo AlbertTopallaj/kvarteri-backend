@@ -21,14 +21,18 @@ public class Ticket {
     private String subject;
 
     @Column(nullable = false, length = 4000)
-    private String body;
+    private String body = "";
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TicketKind kind = TicketKind.ERRAND;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Resident createdBy;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TicketStatus status = TicketStatus.OPEN;
+    private TicketStatus status = TicketStatus.PENDING;
 
     @Column(nullable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

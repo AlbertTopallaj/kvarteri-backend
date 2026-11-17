@@ -41,16 +41,23 @@ public final class Dtos {
     }
 
     public record TicketRequest(
+            TicketKind kind,
             @NotBlank @Size(max = 200) String subject,
-            @NotBlank @Size(max = 4000) String body) {
+            @Size(max = 4000) String body) {
     }
 
-    public record TicketResponse(UUID id, String subject, String body, String createdBy, TicketStatus status,
-                                 LocalDateTime createdAt) {
+    public record TicketStatusRequest(@NotNull TicketStatus status) {
+    }
+
+    public record TicketResponse(UUID id, String subject, String body, TicketKind kind, TenantView createdBy,
+                                 TicketStatus status, LocalDateTime createdAt) {
         public static TicketResponse of(Ticket t) {
-            return new TicketResponse(t.getId(), t.getSubject(), t.getBody(), t.getCreatedBy().getName(),
-                    t.getStatus(), t.getCreatedAt());
+            return new TicketResponse(t.getId(), t.getSubject(), t.getBody(), t.getKind(),
+                    TenantView.of(t.getCreatedBy()), t.getStatus(), t.getCreatedAt());
         }
+    }
+
+    public record NotificationResponse(UUID id, String text, LocalDateTime createdAt, boolean read) {
     }
 
     public record BookingRequest(@NotNull LocalDateTime start, @NotNull LocalDateTime end) {
@@ -100,6 +107,6 @@ public final class Dtos {
                            List<QueueMember> queue, int queueLength, Integer myQueuePosition, boolean mine) {
     }
 
-    public record ResidentSummary(UUID id, String name, String apartmentNumber) {
+    public record ResidentSummary(UUID id, String name, String apartmentNumber, Role role) {
     }
 }

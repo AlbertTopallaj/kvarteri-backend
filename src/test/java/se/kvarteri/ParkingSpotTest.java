@@ -32,6 +32,7 @@ class ParkingSpotTest {
     @Autowired ParkingSpotRepository spots;
     @Autowired MessageRepository messages;
     @Autowired TicketRepository tickets;
+    @Autowired NotificationRepository notificationRepo;
     @Autowired PasswordEncoder encoder;
     MockMvc mvc;
     Resident a, b;
@@ -49,6 +50,7 @@ class ParkingSpotTest {
     void cleanUp() {
         queue.deleteAll();
         spots.deleteAll();
+        notificationRepo.deleteAll();
         tickets.deleteAll();
         messages.deleteAll();
         residents.deleteAll();
@@ -135,16 +137,16 @@ class ParkingSpotTest {
         // tenant can neither queue for the spot nor see it as someone else's
         as("a@test.se", post("/api/parking-spots/" + id + "/queue")).andExpect(status().isConflict());
         as("a@test.se", get("/api/parking-spots")).andExpect(jsonPath("$[0].mine").value(true));
-        as("a@test.se", get("/api/messages")).andExpect(jsonPath("$[0].title").value("Du har tilldelats parkeringsplats P7"));
+        as("a@test.se", get("/api/notifications")).andExpect(jsonPath("$[0].text").value("Du har fått P7 (500 kr/mån)."));
 
         as("board@test.se", delete("/api/parking-spots/" + id)).andExpect(status().isConflict());
         as("board@test.se", post("/api/parking-spots/" + id + "/terminate")).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tenant").doesNotExist());
         as("board@test.se", post("/api/parking-spots/" + id + "/terminate")).andExpect(status().isConflict());
 
-        String bMessages = as("b@test.se", get("/api/messages")).andReturn().getResponse().getContentAsString();
-        assertEquals("parkeringsplats P7 är nu ledig", ((String) JsonPath.read(bMessages, "$[0].title")));
-        as("a@test.se", get("/api/messages")).andExpect(jsonPath("$.length()").value(2));
+        String bNotes = as("b@test.se", get("/api/notifications")).andReturn().getResponse().getContentAsString();
+        assertEquals("P7 är nu ledig – du står först i kön!", ((String) JsonPath.read(bNotes, "$[0].text")));
+        as("a@test.se", get("/api/notifications")).andExpect(jsonPath("$.length()").value(2));
     }
 
     @Test
@@ -172,7 +174,49 @@ class ParkingSpotTest {
         as("a@test.se", post("/api/tickets").contentType(MediaType.APPLICATION_JSON)
                 .content("{\"subject\":\"S\",\"body\":\"B\"}")).andExpect(status().isCreated());
         as("a@test.se", get("/api/tickets")).andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].createdBy").value("Anna"));
-        as("board@test.se", get("/api/tickets")).andExpect(jsonPath("$[0].createdBy").value("Anna"));
+                .andExpect(jsonPath("$[0].createdBy.name").value("Anna"));
+        as("board@test.se", get("/api/tickets")).andExpect(jsonPath("$[0].createdBy.name").value("Anna"));
+    }
+
+    @Test
+    void notificationsFlowForTicketsAnnouncementsAndReadAll() throws Exception {
+        as("a@test.se", post("/api/tickets").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"kind\":\"INCIDENT\",\"subject\":\"Lampa\"}")).andExpect(status().isCreated())
+                .andExpect(jsonPath("$.kind").value("INCIDENT")).andExpect(jsonPath("$.status").value("PENDING"));
+        as("board@test.se", get("/api/notifications")).andExpect(jsonPath("$[0].text")
+                .value("Ny felanmälan från Anna: Lampa"));
+        String id = JsonPath.read(as("a@test.se", get("/api/tickets")).andReturn().getResponse().getContentAsString(),
+                "$[0].id");
+        as("a@test.se", patch("/api/tickets/" + id).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"DONE\"}")).andExpect(status().isForbidden());
+        as("board@test.se", patch("/api/tickets/" + id).contentType(MediaType.APPLICATION_JSON)
+                .content("{\"status\":\"IN_PROGRESS\"}")).andExpect(status().isOk());
+        as("a@test.se", get("/api/notifications")).andExpect(jsonPath("$[0].text")
+                .value("Ditt ärende \"Lampa\" har status: Pågår")).andExpect(jsonPath("$[0].read").value(false));
+
+        as("board@test.se", post("/api/messages").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"title\":\"Stambyte\",\"body\":\"x\"}")).andExpect(status().isCreated());
+        as("b@test.se", get("/api/notifications")).andExpect(jsonPath("$[0].text")
+                .value("Nytt meddelande från styrelsen: Stambyte"));
+        as("b@test.se", post("/api/notifications/read-all")).andExpect(status().isNoContent());
+        as("b@test.se", get("/api/notifications")).andExpect(jsonPath("$[0].read").value(true));
+    }
+
+    @Test
+    void adminListsAndRemovesAccountsAndFreesTheirSpots() throws Exception {
+        save("admin@test.se", "Admin", Role.ADMIN);
+        String spot = createSpot("PARKING", "P1");
+        as("board@test.se", post("/api/parking-spots/" + spot + "/assign").contentType(MediaType.APPLICATION_JSON)
+                .content(assignBody(a))).andExpect(status().isOk());
+        as("a@test.se", get("/api/admin/residents")).andExpect(status().isForbidden());
+        as("admin@test.se", get("/api/admin/residents")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(4));
+        as("admin@test.se", delete("/api/admin/residents/" + a.getId())).andExpect(status().isNoContent());
+        as("admin@test.se", get("/api/admin/residents")).andExpect(jsonPath("$.length()").value(3));
+        as("board@test.se", get("/api/parking-spots")).andExpect(jsonPath("$[0].tenant").doesNotExist());
+        as("a@test.se", get("/api/me")).andExpect(status().isUnauthorized());
+        // the last admin cannot be removed, but a regular user can delete their own account
+        as("admin@test.se", delete("/api/me")).andExpect(status().isConflict());
+        as("b@test.se", delete("/api/me")).andExpect(status().isNoContent());
     }
 }

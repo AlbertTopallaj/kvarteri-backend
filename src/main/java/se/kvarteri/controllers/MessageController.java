@@ -10,9 +10,11 @@ import se.kvarteri.dto.Dtos.MessageResponse;
 import se.kvarteri.exception.NotFoundException;
 import se.kvarteri.models.Message;
 import se.kvarteri.models.Resident;
+import se.kvarteri.models.Role;
 import se.kvarteri.repositories.MessageRepository;
 import se.kvarteri.repositories.ResidentRepository;
 import se.kvarteri.services.CurrentUser;
+import se.kvarteri.services.NotificationService;
 
 import java.util.List;
 
@@ -25,6 +27,7 @@ public class MessageController {
     private final MessageRepository messages;
     private final ResidentRepository residents;
     private final CurrentUser currentUser;
+    private final NotificationService notifications;
 
     @GetMapping
     List<MessageResponse> mine(Authentication auth) {
@@ -44,6 +47,12 @@ public class MessageController {
                     .orElseThrow(() -> new NotFoundException("Recipient not found"));
             m.setRecipient(rec);
         }
-        return MessageResponse.of(messages.save(m));
+        m = messages.save(m);
+        if (m.getRecipient() != null) {
+            notifications.notify(m.getRecipient(), "Nytt meddelande från " + m.getAuthor().getName() + ": " + m.getTitle());
+        } else {
+            notifications.notifyRole(Role.RESIDENT, "Nytt meddelande från styrelsen: " + m.getTitle());
+        }
+        return MessageResponse.of(m);
     }
 }

@@ -44,7 +44,7 @@ public class TicketReplyController {
     ReplyResponse reply(@PathVariable UUID ticketId, @Valid @RequestBody ReplyRequest req, Authentication auth) {
         Resident me = currentUser.get(auth);
         Ticket t = accessible(ticketId, me);
-        if (t.getStatus() == TicketStatus.CLOSED) throw new ConflictException("Ticket is closed");
+        if (t.getStatus().isClosed()) throw new ConflictException("Ticket is closed");
         TicketReply r = new TicketReply();
         r.setTicket(t);
         r.setAuthor(me);

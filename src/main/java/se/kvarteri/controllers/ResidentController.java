@@ -26,7 +26,7 @@ public class ResidentController {
         return residents.findAll().stream()
                 .filter(Resident::isEnabled)
                 .sorted(Comparator.comparing(Resident::getName, String.CASE_INSENSITIVE_ORDER))
-                .map(r -> new ResidentSummary(r.getId(), r.getName(), r.getApartmentNumber()))
+                .map(r -> new ResidentSummary(r.getId(), r.getName(), r.getApartmentNumber(), r.getRole()))
                 .toList();
     }
 }

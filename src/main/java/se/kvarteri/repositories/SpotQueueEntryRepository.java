@@ -18,6 +18,10 @@ public interface SpotQueueEntryRepository extends JpaRepository<SpotQueueEntry, 
     @Query("select q from SpotQueueEntry q join fetch q.resident where q.spot = ?1 order by q.createdAt, q.id")
     List<SpotQueueEntry> findBySpotOrdered(ParkingSpot spot);
 
+    @Modifying
+    @Query("delete from SpotQueueEntry q where q.resident = ?1")
+    void deleteByResident(se.kvarteri.models.Resident resident);
+
     Optional<SpotQueueEntry> findBySpotIdAndResidentId(UUID spotId, UUID residentId);
 
     boolean existsBySpotIdAndResidentId(UUID spotId, UUID residentId);

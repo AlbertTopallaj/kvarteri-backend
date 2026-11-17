@@ -19,4 +19,6 @@ public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, UUID> 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select s from ParkingSpot s left join fetch s.tenant where s.id = ?1")
     Optional<ParkingSpot> findByIdForUpdate(UUID id);
+
+    List<ParkingSpot> findByTenant(se.kvarteri.models.Resident tenant);
 }

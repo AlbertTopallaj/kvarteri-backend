@@ -16,6 +16,7 @@ import se.kvarteri.repositories.ResidentRepository;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -25,12 +26,14 @@ class ApiSecurityTest {
     @Autowired WebApplicationContext ctx;
     @Autowired ResidentRepository residents;
     @Autowired se.kvarteri.repositories.MessageRepository messages;
+    @Autowired se.kvarteri.repositories.NotificationRepository notificationRepo;
     @Autowired PasswordEncoder encoder;
     MockMvc mvc;
 
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(ctx).apply(springSecurity()).build();
+        notificationRepo.deleteAll();
         messages.deleteAll();
         residents.deleteAll();
         save("res@test.se", Role.RESIDENT);
@@ -83,7 +86,7 @@ class ApiSecurityTest {
 
     @Test
     void residentCannotCloseTicket() throws Exception {
-        mvc.perform(post("/api/tickets/" + java.util.UUID.randomUUID() + "/close")
+        mvc.perform(patch("/api/tickets/" + java.util.UUID.randomUUID()).contentType(MediaType.APPLICATION_JSON).content("{\"status\":\"DONE\"}")
                 .with(httpBasic("res@test.se", "password123"))).andExpect(status().isForbidden());
     }
 }

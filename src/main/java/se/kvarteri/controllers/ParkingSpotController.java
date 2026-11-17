@@ -13,6 +13,7 @@ import se.kvarteri.exception.NotFoundException;
 import se.kvarteri.models.*;
 import se.kvarteri.repositories.*;
 import se.kvarteri.services.CurrentUser;
+import se.kvarteri.services.NotificationService;
 
 import java.util.*;
 
@@ -31,7 +32,7 @@ public class ParkingSpotController {
     private final ParkingSpotRepository spots;
     private final SpotQueueEntryRepository queue;
     private final ResidentRepository residents;
-    private final MessageRepository messages;
+    private final NotificationService notifications;
     private final CurrentUser currentUser;
 
     @GetMapping
@@ -117,11 +118,11 @@ public class ParkingSpotController {
         if (s.getTenant() != null) throw new ConflictException("Spot is already rented");
         Resident tenant = residents.findById(req.residentId())
                 .orElseThrow(() -> new NotFoundException("Resident not found"));
+        if (!tenant.isEnabled()) throw new NotFoundException("Resident not found");
         s.setTenant(tenant);
         queue.findBySpotIdAndResidentId(id, tenant.getId()).ifPresent(queue::delete);
         queue.flush();
-        notify(staff, tenant, "Du har tilldelats " + label(s),
-                "Du har tilldelats " + label(s) + " (" + s.getPrice() + " kr/mån).");
+        notifications.notify(tenant, "Du har fått " + s.getName() + " (" + s.getPrice() + " kr/mån).");
         return view(s, queue.findBySpotOrdered(s), staff);
     }
 
@@ -133,12 +134,10 @@ public class ParkingSpotController {
         Resident old = s.getTenant();
         if (old == null) throw new ConflictException("Spot is not rented");
         s.setTenant(null);
-        notify(staff, old, "Din hyra av " + label(s) + " har sagts upp",
-                "Hyresavtalet för " + label(s) + " har sagts upp.");
+        notifications.notify(old, "Ditt hyresavtal för " + s.getName() + " har sagts upp.");
         List<SpotQueueEntry> q = queue.findBySpotOrdered(s);
         if (!q.isEmpty()) {
-            notify(staff, q.get(0).getResident(), label(s) + " är nu ledig",
-                    label(s) + " är nu ledig och du står först i kön.");
+            notifications.notify(q.get(0).getResident(), s.getName() + " är nu ledig – du står först i kön!");
         }
         return view(s, q, staff);
     }
@@ -149,18 +148,7 @@ public class ParkingSpotController {
         return spots.findByIdForUpdate(id).orElseThrow(() -> new NotFoundException("Spot not found"));
     }
 
-    private void notify(Resident from, Resident to, String title, String body) {
-        Message m = new Message();
-        m.setAuthor(from);
-        m.setRecipient(to);
-        m.setTitle(title);
-        m.setBody(body);
-        messages.save(m);
-    }
 
-    private static String label(ParkingSpot s) {
-        return (s.getKind() == SpotKind.GARAGE ? "garage " : "parkeringsplats ") + s.getName();
-    }
 
     private static SpotView view(ParkingSpot s, List<SpotQueueEntry> q, Resident me) {
         List<QueueMember> members = q.stream()
