@@ -37,9 +37,20 @@ Environment variables: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `DDL_AUTO` (default `
 | `GET /api/messages`, `POST /api/messages` | all / BOARD_MEMBER, ADMIN |
 | `GET/POST /api/tickets`, `POST /api/tickets/{id}/close` | all (own tickets) / close: BOARD_MEMBER, ADMIN |
 | `GET /api/communityrooms`, `/api/laundries`; `GET/POST /{id}/bookings`; `DELETE /api/bookings/{id}` | authenticated (cancel: owner or staff) |
-| `POST /api/admin/communityrooms|laundries|parkings|garages` | ADMIN |
+| `POST /api/admin/communityrooms|laundries` | ADMIN |
 | `GET/POST /api/tickets/{id}/replies` | ticket creator, BOARD_MEMBER, ADMIN |
-| `/api/parkings`, `/api/garages` (`/{id}/claim`, `/{id}/release`) | authenticated |
+| `GET /api/parking-spots`; `POST/DELETE /api/parking-spots/{id}/queue` | authenticated |
+| `POST /api/parking-spots`, `DELETE`/`PATCH /api/parking-spots/{id}`, `POST /{id}/assign` or `/terminate`, `GET /api/residents` | BOARD_MEMBER, ADMIN |
 
 Login is throttled: 5 failed attempts per client ip + username gives 429 for 15 minutes (in-memory, per instance).
 Bookings are time slots (max 12 h, up to 60 days ahead); overlapping bookings give 409.
+
+## Docker
+
+```
+cp .env.example .env   # set passwords
+docker compose up --build
+```
+
+The API is served on `127.0.0.1:8080`; PostgreSQL is only reachable inside the compose network. Because the API
+uses HTTP Basic, run it behind a reverse proxy with TLS in any real deployment.

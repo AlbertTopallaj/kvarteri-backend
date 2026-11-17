@@ -21,6 +21,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/tickets")
 @RequiredArgsConstructor
+@org.springframework.transaction.annotation.Transactional
 public class TicketController {
 
     private final TicketRepository tickets;

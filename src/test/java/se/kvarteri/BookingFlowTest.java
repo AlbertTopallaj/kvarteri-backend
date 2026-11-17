@@ -29,7 +29,8 @@ class BookingFlowTest {
     @Autowired TicketReplyRepository replies;
     @Autowired TicketRepository tickets;
     @Autowired MessageRepository messages;
-    @Autowired ParkingRepository parkings;
+    @Autowired ParkingSpotRepository parkings;
+    @Autowired SpotQueueEntryRepository spotQueue;
     @Autowired PasswordEncoder encoder;
     MockMvc mvc;
     CommunityRoom room;
@@ -40,6 +41,7 @@ class BookingFlowTest {
         replies.deleteAll();
         tickets.deleteAll();
         messages.deleteAll();
+        spotQueue.deleteAll();
         parkings.deleteAll();
         rooms.deleteAll();
         residents.deleteAll();
@@ -52,6 +54,7 @@ class BookingFlowTest {
         replies.deleteAll();
         tickets.deleteAll();
         messages.deleteAll();
+        spotQueue.deleteAll();
         parkings.deleteAll();
         rooms.deleteAll();
         residents.deleteAll();
@@ -129,19 +132,6 @@ class BookingFlowTest {
     }
 
     @Test
-    void parkingCanOnlyBeClaimedOnce() throws Exception {
-        Parking p = new Parking();
-        p.setParkingNumber(1);
-        p = parkings.save(p);
-        mvc.perform(post("/api/parkings/" + p.getId() + "/claim").with(httpBasic("a@test.se", "password123")))
-                .andExpect(status().isOk());
-        mvc.perform(post("/api/parkings/" + p.getId() + "/claim").with(httpBasic("b@test.se", "password123")))
-                .andExpect(status().isConflict());
-        mvc.perform(post("/api/parkings/" + p.getId() + "/release").with(httpBasic("b@test.se", "password123")))
-                .andExpect(status().isForbidden());
-    }
-
-    @Test
     void repeatedWrongPasswordsLockTheClientOut() throws Exception {
         for (int i = 0; i < 5; i++) {
             mvc.perform(get("/api/messages").with(httpBasic("lock@test.se", "wrong")))
@@ -149,5 +139,30 @@ class BookingFlowTest {
         }
         mvc.perform(get("/api/messages").with(httpBasic("lock@test.se", "password123")))
                 .andExpect(status().isTooManyRequests());
+    }
+
+    @Test
+    void corsAllowsConfiguredOriginOnly() throws Exception {
+        mvc.perform(options("/api/me").header("Origin", "http://localhost:5173")
+                        .header("Access-Control-Request-Method", "GET")
+                        .header("Access-Control-Request-Headers", "authorization"))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .string("Access-Control-Allow-Origin", "http://localhost:5173"));
+        mvc.perform(options("/api/me").header("Origin", "http://evil.example")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void meReturnsRoleAndUnauthorizedHasNoBrowserDialog() throws Exception {
+        mvc.perform(get("/api/me").with(httpBasic("board@test.se", "password123")))
+                .andExpect(status().isOk())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers
+                        .jsonPath("$.role").value("BOARD_MEMBER"));
+        mvc.perform(get("/api/me"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.header()
+                        .doesNotExist("WWW-Authenticate"));
     }
 }

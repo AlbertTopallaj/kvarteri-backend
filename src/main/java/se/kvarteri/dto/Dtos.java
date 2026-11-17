@@ -4,6 +4,7 @@ import jakarta.validation.constraints.*;
 import se.kvarteri.models.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 public final class Dtos {
@@ -73,9 +74,32 @@ public final class Dtos {
     public record LaundryRequest(@NotBlank @Size(max = 100) String name) {
     }
 
-    public record NumberedRequest(@Min(1) int number, @Min(0) int price) {
+    public record ResourceView(UUID id, String name, int price, boolean taken, boolean mine) {
     }
 
-    public record ResourceView(UUID id, String name, int price, boolean taken, boolean mine) {
+    public record CreateSpotRequest(@NotNull SpotKind kind, @NotBlank @Size(max = 50) String name,
+                                    @Min(0) int price) {
+    }
+
+    public record PriceRequest(@Min(0) int price) {
+    }
+
+    public record AssignRequest(@NotNull UUID residentId) {
+    }
+
+    public record TenantView(UUID id, String name, String apartmentNumber) {
+        public static TenantView of(Resident r) {
+            return r == null ? null : new TenantView(r.getId(), r.getName(), r.getApartmentNumber());
+        }
+    }
+
+    public record QueueMember(UUID id, String name) {
+    }
+
+    public record SpotView(UUID id, SpotKind kind, String name, int price, TenantView tenant,
+                           List<QueueMember> queue, int queueLength, Integer myQueuePosition, boolean mine) {
+    }
+
+    public record ResidentSummary(UUID id, String name, String apartmentNumber) {
     }
 }

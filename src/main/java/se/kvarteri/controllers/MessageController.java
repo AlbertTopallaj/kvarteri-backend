@@ -19,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/messages")
 @RequiredArgsConstructor
+@org.springframework.transaction.annotation.Transactional
 public class MessageController {
 
     private final MessageRepository messages;
