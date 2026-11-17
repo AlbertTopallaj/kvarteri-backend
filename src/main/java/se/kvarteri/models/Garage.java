@@ -17,6 +17,9 @@ public class Garage {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Version
+    private long version;
+
     @Column(unique = true)
     private int garageNumber;
 

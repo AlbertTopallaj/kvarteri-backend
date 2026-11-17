@@ -1,6 +1,7 @@
 package se.kvarteri.exception;
 
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -27,6 +28,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DataIntegrityViolationException.class)
     ProblemDetail integrity(DataIntegrityViolationException e) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Request conflicts with existing data");
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    ProblemDetail lock(ObjectOptimisticLockingFailureException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "Resource was just changed, try again");
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    ProblemDetail badArgument(IllegalArgumentException e) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

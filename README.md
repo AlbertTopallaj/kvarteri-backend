@@ -23,3 +23,18 @@ Kvarteri backend is the backend for the system Kvarteri. Kvarteri is a system fo
 Under development. Stay tuned
 
 
+
+## Running
+
+Environment variables: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `DDL_AUTO` (use `validate` in production),
+`KVARTERI_ADMIN_EMAIL` + `KVARTERI_ADMIN_PASSWORD` (creates the first admin on startup, min 10 chars).
+
+## API (HTTP Basic auth)
+
+| Endpoint | Access |
+|---|---|
+| `POST /api/admin/residents` | ADMIN |
+| `GET /api/messages`, `POST /api/messages` | all / BOARD_MEMBER, ADMIN |
+| `GET/POST /api/tickets`, `POST /api/tickets/{id}/close` | all (own tickets) / close: BOARD_MEMBER, ADMIN |
+| `/api/communityrooms`, `/api/laundries` (`/{id}/book`, `/{id}/cancel`) | authenticated |
+| `/api/parkings`, `/api/garages` (`/{id}/claim`, `/{id}/release`) | authenticated |

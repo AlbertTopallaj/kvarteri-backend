@@ -19,6 +19,9 @@ public class CommunityRoom {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Version
+    private long version;
+
     @NotBlank
     private String name;
 
