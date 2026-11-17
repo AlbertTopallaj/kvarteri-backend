@@ -10,13 +10,17 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
+
+import java.time.Clock;
+import java.time.Duration;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain filterChain(HttpSecurity http, Clock clock) throws Exception {
         http
                 // Stateless API authenticated per request with HTTP Basic: no session cookies, so no CSRF risk.
                 .csrf(csrf -> csrf.disable())
@@ -28,7 +32,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/messages/**").hasAnyRole("BOARD_MEMBER", "ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().denyAll())
-                .httpBasic(Customizer.withDefaults());
+                .httpBasic(Customizer.withDefaults())
+                // Built here (not a @Bean) so it is not also registered as a plain servlet filter.
+                .addFilterBefore(new LoginThrottleFilter(5, Duration.ofMinutes(15), Duration.ofMinutes(15), clock),
+                        BasicAuthenticationFilter.class);
         return http.build();
     }
 

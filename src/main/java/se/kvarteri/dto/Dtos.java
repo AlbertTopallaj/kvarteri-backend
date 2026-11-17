@@ -52,6 +52,30 @@ public final class Dtos {
         }
     }
 
-    public record BookingRequest(@NotNull LocalDateTime time) {
+    public record BookingRequest(@NotNull LocalDateTime start, @NotNull LocalDateTime end) {
+    }
+
+    public record BookingResponse(UUID id, LocalDateTime start, LocalDateTime end, boolean mine) {
+    }
+
+    public record ReplyRequest(@NotBlank @Size(max = 4000) String body) {
+    }
+
+    public record ReplyResponse(UUID id, String author, String body, LocalDateTime createdAt) {
+        public static ReplyResponse of(TicketReply r) {
+            return new ReplyResponse(r.getId(), r.getAuthor().getName(), r.getBody(), r.getCreatedAt());
+        }
+    }
+
+    public record RoomRequest(@NotBlank @Size(max = 100) String name, @Min(0) int price, @Min(1) int capacity) {
+    }
+
+    public record LaundryRequest(@NotBlank @Size(max = 100) String name) {
+    }
+
+    public record NumberedRequest(@Min(1) int number, @Min(0) int price) {
+    }
+
+    public record ResourceView(UUID id, String name, int price, boolean taken, boolean mine) {
     }
 }

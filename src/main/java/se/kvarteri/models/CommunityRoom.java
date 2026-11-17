@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -23,6 +22,7 @@ public class CommunityRoom {
     private long version;
 
     @NotBlank
+    @Column(nullable = false)
     private String name;
 
     @Min(0)
@@ -30,10 +30,4 @@ public class CommunityRoom {
 
     @Min(1)
     private int capacity;
-
-    private LocalDateTime bookedTime;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "tenant_id")
-    private Resident tenant;
 }

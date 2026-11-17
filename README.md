@@ -26,7 +26,7 @@ Under development. Stay tuned
 
 ## Running
 
-Environment variables: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `DDL_AUTO` (use `validate` in production),
+Environment variables: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `DDL_AUTO` (default `validate`; the schema is created by Flyway migrations in `db/migration`),
 `KVARTERI_ADMIN_EMAIL` + `KVARTERI_ADMIN_PASSWORD` (creates the first admin on startup, min 10 chars).
 
 ## API (HTTP Basic auth)
@@ -36,5 +36,10 @@ Environment variables: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `DDL_AUTO` (use `vali
 | `POST /api/admin/residents` | ADMIN |
 | `GET /api/messages`, `POST /api/messages` | all / BOARD_MEMBER, ADMIN |
 | `GET/POST /api/tickets`, `POST /api/tickets/{id}/close` | all (own tickets) / close: BOARD_MEMBER, ADMIN |
-| `/api/communityrooms`, `/api/laundries` (`/{id}/book`, `/{id}/cancel`) | authenticated |
+| `GET /api/communityrooms`, `/api/laundries`; `GET/POST /{id}/bookings`; `DELETE /api/bookings/{id}` | authenticated (cancel: owner or staff) |
+| `POST /api/admin/communityrooms|laundries|parkings|garages` | ADMIN |
+| `GET/POST /api/tickets/{id}/replies` | ticket creator, BOARD_MEMBER, ADMIN |
 | `/api/parkings`, `/api/garages` (`/{id}/claim`, `/{id}/release`) | authenticated |
+
+Login is throttled: 5 failed attempts per client ip + username gives 429 for 15 minutes (in-memory, per instance).
+Bookings are time slots (max 12 h, up to 60 days ahead); overlapping bookings give 409.

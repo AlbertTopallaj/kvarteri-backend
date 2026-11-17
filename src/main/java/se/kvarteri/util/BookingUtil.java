@@ -14,4 +14,13 @@ public final class BookingUtil {
                 && time.isAfter(now)
                 && Duration.between(now, time).toDays() <= maxDaysAhead;
     }
+
+    /** A period is valid if start is in the future (within the limit), end is after start and not too long. */
+    public static boolean isValidPeriod(LocalDateTime start, LocalDateTime end, LocalDateTime now,
+                                        int maxDaysAhead, Duration maxLength) {
+        return isValidBookingTime(start, now, maxDaysAhead)
+                && end != null
+                && end.isAfter(start)
+                && !Duration.between(start, end).minus(maxLength).isPositive();
+    }
 }

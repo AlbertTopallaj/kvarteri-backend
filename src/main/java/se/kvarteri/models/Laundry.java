@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
@@ -22,11 +21,6 @@ public class Laundry {
     private long version;
 
     @NotBlank
+    @Column(nullable = false)
     private String name;
-
-    private LocalDateTime bookedTime;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "booked_by_id")
-    private Resident bookedBy;
 }
