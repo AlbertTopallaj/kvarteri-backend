@@ -10,7 +10,7 @@ Kvarteri backend is the backend for the system Kvarteri. Kvarteri is a system fo
 - Booking of garage
 - Booking of community room
 - Board member can send out messages
-- Resident can write/open a ticke to Board members
+- Resident can write/open a ticket to Board members
 - Board member can contact Resident individually
 - The Admin (dev) gives access to the system.
 
