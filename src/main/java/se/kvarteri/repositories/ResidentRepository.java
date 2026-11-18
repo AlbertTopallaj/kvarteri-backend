@@ -1,8 +1,11 @@
 package se.kvarteri.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import se.kvarteri.models.Association;
 import se.kvarteri.models.Resident;
+import se.kvarteri.models.Role;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,9 +15,11 @@ public interface ResidentRepository extends JpaRepository<Resident, UUID> {
 
     boolean existsByEmailIgnoreCase(String email);
 
-    java.util.List<Resident> findByRoleAndEnabledTrue(se.kvarteri.models.Role role);
+    List<Resident> findByAssociationAndRoleAndEnabledTrue(Association association, Role role);
 
-    java.util.List<Resident> findByEnabledTrueOrderByNameAsc();
+    List<Resident> findByEnabledTrueOrderByNameAsc();
 
-    long countByRoleAndEnabledTrue(se.kvarteri.models.Role role);
+    List<Resident> findByAssociationAndEnabledTrueOrderByNameAsc(Association association);
+
+    long countByRoleAndEnabledTrue(Role role);
 }

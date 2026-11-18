@@ -34,12 +34,15 @@ class ParkingSpotTest {
     @Autowired TicketRepository tickets;
     @Autowired NotificationRepository notificationRepo;
     @Autowired PasswordEncoder encoder;
+    @Autowired se.kvarteri.repositories.AssociationRepository associations;
+    se.kvarteri.models.Association assoc;
     MockMvc mvc;
     Resident a, b;
 
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(ctx).apply(springSecurity()).build();
+        assoc = newAssociation();
         cleanUp();
         a = save("a@test.se", "Anna", Role.RESIDENT);
         b = save("b@test.se", "Bo", Role.RESIDENT);
@@ -56,6 +59,12 @@ class ParkingSpotTest {
         residents.deleteAll();
     }
 
+    private se.kvarteri.models.Association newAssociation() {
+        se.kvarteri.models.Association a = new se.kvarteri.models.Association();
+        a.setName("Test-" + java.util.UUID.randomUUID());
+        return associations.save(a);
+    }
+
     private Resident save(String email, String name, Role role) {
         Resident r = new Resident();
         r.setEmail(email);
@@ -63,6 +72,7 @@ class ParkingSpotTest {
         r.setApartmentNumber("1101");
         r.setPasswordHash(encoder.encode("password123"));
         r.setRole(role);
+        r.setAssociation(assoc);
         return residents.save(r);
     }
 

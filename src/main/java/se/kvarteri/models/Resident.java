@@ -41,4 +41,9 @@ public class Resident {
 
     @Column(nullable = false)
     private boolean enabled = true;
+
+    /** Eager so the association is available on detached users (e.g. in /api/me). */
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(name = "association_id", nullable = false)
+    private Association association;
 }

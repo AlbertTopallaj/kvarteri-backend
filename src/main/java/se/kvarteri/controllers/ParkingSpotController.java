@@ -40,10 +40,10 @@ public class ParkingSpotController {
     List<SpotView> list(Authentication auth) {
         Resident me = currentUser.get(auth);
         Map<UUID, List<SpotQueueEntry>> byspot = new HashMap<>();
-        for (SpotQueueEntry q : queue.findAllOrdered()) {
+        for (SpotQueueEntry q : queue.findAllOrdered(me.getAssociation())) {
             byspot.computeIfAbsent(q.getSpot().getId(), k -> new ArrayList<>()).add(q);
         }
-        return spots.findAllWithTenant().stream()
+        return spots.findAllWithTenant(me.getAssociation()).stream()
                 .map(s -> view(s, byspot.getOrDefault(s.getId(), List.of()), me)).toList();
     }
 
@@ -53,7 +53,7 @@ public class ParkingSpotController {
     @ResponseStatus(HttpStatus.CREATED)
     SpotView joinQueue(@PathVariable UUID id, Authentication auth) {
         Resident me = currentUser.get(auth);
-        ParkingSpot s = lock(id);
+        ParkingSpot s = lock(id, me);
         if (s.getTenant() != null && s.getTenant().getId().equals(me.getId())) {
             throw new ConflictException("You already rent this spot");
         }
@@ -70,7 +70,7 @@ public class ParkingSpotController {
     @DeleteMapping("/{id}/queue")
     SpotView leaveQueue(@PathVariable UUID id, Authentication auth) {
         Resident me = currentUser.get(auth);
-        ParkingSpot s = lock(id);
+        ParkingSpot s = lock(id, me);
         SpotQueueEntry e = queue.findBySpotIdAndResidentId(id, me.getId())
                 .orElseThrow(() -> new NotFoundException("You are not in the queue"));
         queue.delete(e);
@@ -84,19 +84,22 @@ public class ParkingSpotController {
     @PreAuthorize(STAFF)
     @ResponseStatus(HttpStatus.CREATED)
     SpotView create(@Valid @RequestBody CreateSpotRequest req, Authentication auth) {
+        Resident me = currentUser.get(auth);
         ParkingSpot s = new ParkingSpot();
+        s.setAssociation(me.getAssociation());
         s.setKind(req.kind());
         s.setName(req.name().trim());
         s.setPrice(req.price());
         s = spots.saveAndFlush(s);
-        return view(s, List.of(), currentUser.get(auth));
+        return view(s, List.of(), me);
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize(STAFF)
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    void delete(@PathVariable UUID id) {
-        ParkingSpot s = lock(id);
+    void delete(@PathVariable UUID id, Authentication auth) {
+        Resident me = currentUser.get(auth);
+        ParkingSpot s = lock(id, me);
         if (s.getTenant() != null) throw new ConflictException("Spot is rented, terminate it first");
         queue.deleteBySpot(s);
         spots.delete(s);
@@ -105,20 +108,23 @@ public class ParkingSpotController {
     @PatchMapping("/{id}")
     @PreAuthorize(STAFF)
     SpotView changePrice(@PathVariable UUID id, @Valid @RequestBody PriceRequest req, Authentication auth) {
-        ParkingSpot s = lock(id);
+        Resident me = currentUser.get(auth);
+        ParkingSpot s = lock(id, me);
         s.setPrice(req.price());
-        return view(s, queue.findBySpotOrdered(s), currentUser.get(auth));
+        return view(s, queue.findBySpotOrdered(s), me);
     }
 
     @PostMapping("/{id}/assign")
     @PreAuthorize(STAFF)
     SpotView assign(@PathVariable UUID id, @Valid @RequestBody AssignRequest req, Authentication auth) {
         Resident staff = currentUser.get(auth);
-        ParkingSpot s = lock(id);
+        ParkingSpot s = lock(id, staff);
         if (s.getTenant() != null) throw new ConflictException("Spot is already rented");
         Resident tenant = residents.findById(req.residentId())
                 .orElseThrow(() -> new NotFoundException("Resident not found"));
-        if (!tenant.isEnabled()) throw new NotFoundException("Resident not found");
+        if (!tenant.isEnabled() || !CurrentUser.sameAssociation(tenant, staff)) {
+            throw new NotFoundException("Resident not found");
+        }
         s.setTenant(tenant);
         queue.findBySpotIdAndResidentId(id, tenant.getId()).ifPresent(queue::delete);
         queue.flush();
@@ -130,7 +136,7 @@ public class ParkingSpotController {
     @PreAuthorize(STAFF)
     SpotView terminate(@PathVariable UUID id, Authentication auth) {
         Resident staff = currentUser.get(auth);
-        ParkingSpot s = lock(id);
+        ParkingSpot s = lock(id, staff);
         Resident old = s.getTenant();
         if (old == null) throw new ConflictException("Spot is not rented");
         s.setTenant(null);
@@ -144,8 +150,8 @@ public class ParkingSpotController {
 
     // ---- helpers
 
-    private ParkingSpot lock(UUID id) {
-        return spots.findByIdForUpdate(id).orElseThrow(() -> new NotFoundException("Spot not found"));
+    private ParkingSpot lock(UUID id, Resident me) {
+        return spots.findByIdForUpdate(id, me.getAssociation()).orElseThrow(() -> new NotFoundException("Spot not found"));
     }
 
 

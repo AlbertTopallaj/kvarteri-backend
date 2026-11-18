@@ -47,7 +47,7 @@ public class TicketController {
         t.setCreatedBy(me);
         t = tickets.save(t);
         String label = t.getKind() == TicketKind.INCIDENT ? "felanmälan" : "ärende";
-        notifications.notifyRole(Role.BOARD_MEMBER, "Ny " + label + " från " + me.getName() + ": " + t.getSubject());
+        notifications.notifyRole(me.getAssociation(), Role.BOARD_MEMBER, "Ny " + label + " från " + me.getName() + ": " + t.getSubject());
         return TicketResponse.of(t);
     }
 
@@ -57,15 +57,17 @@ public class TicketController {
     List<TicketResponse> list(Authentication auth) {
         Resident me = currentUser.get(auth);
         List<Ticket> result = CurrentUser.isStaff(me)
-                ? tickets.findAllByOrderByCreatedAtDesc()
+                ? tickets.findByCreatedByAssociationOrderByCreatedAtDesc(me.getAssociation())
                 : tickets.findByCreatedByOrderByCreatedAtDesc(me);
         return result.stream().map(TicketResponse::of).toList();
     }
 
     @PatchMapping("/{id}")
     @PreAuthorize("hasAnyRole('BOARD_MEMBER','ADMIN')")
-    TicketResponse setStatus(@PathVariable UUID id, @Valid @RequestBody TicketStatusRequest req) {
-        Ticket t = tickets.findById(id).orElseThrow(() -> new NotFoundException("Ticket not found"));
+    TicketResponse setStatus(@PathVariable UUID id, @Valid @RequestBody TicketStatusRequest req, Authentication auth) {
+        Ticket t = tickets.findById(id)
+                .filter(x -> CurrentUser.sameAssociation(x.getCreatedBy(), currentUser.get(auth)))
+                .orElseThrow(() -> new NotFoundException("Ticket not found"));
         if (t.getStatus() != req.status()) {
             t.setStatus(req.status());
             notifications.notify(t.getCreatedBy(), "Ditt ärende \"" + t.getSubject() + "\" har status: "

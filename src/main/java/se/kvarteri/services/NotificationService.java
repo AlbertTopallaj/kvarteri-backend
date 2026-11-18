@@ -2,6 +2,7 @@ package se.kvarteri.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import se.kvarteri.models.Association;
 import se.kvarteri.models.Notification;
 import se.kvarteri.models.Resident;
 import se.kvarteri.models.Role;
@@ -23,7 +24,7 @@ public class NotificationService {
         notifications.save(n);
     }
 
-    public void notifyRole(Role role, String text) {
-        residents.findByRoleAndEnabledTrue(role).forEach(r -> notify(r, text));
+    public void notifyRole(Association association, Role role, String text) {
+        residents.findByAssociationAndRoleAndEnabledTrue(association, role).forEach(r -> notify(r, text));
     }
 }

@@ -1,6 +1,7 @@
 package se.kvarteri.repositories;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import se.kvarteri.models.Association;
 import se.kvarteri.models.Resident;
 import se.kvarteri.models.Ticket;
 
@@ -11,5 +12,5 @@ public interface TicketRepository extends JpaRepository<Ticket, UUID> {
 
     List<Ticket> findByCreatedByOrderByCreatedAtDesc(Resident createdBy);
 
-    List<Ticket> findAllByOrderByCreatedAtDesc();
+    List<Ticket> findByCreatedByAssociationOrderByCreatedAtDesc(Association association);
 }

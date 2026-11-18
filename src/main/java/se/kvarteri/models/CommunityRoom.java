@@ -30,4 +30,8 @@ public class CommunityRoom {
 
     @Min(1)
     private int capacity;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "association_id", nullable = false)
+    private Association association;
 }

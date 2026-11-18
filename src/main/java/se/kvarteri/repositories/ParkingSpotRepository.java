@@ -12,13 +12,13 @@ import java.util.UUID;
 
 public interface ParkingSpotRepository extends JpaRepository<ParkingSpot, UUID> {
 
-    @Query("select s from ParkingSpot s left join fetch s.tenant order by s.kind, s.name")
-    List<ParkingSpot> findAllWithTenant();
+    @Query("select s from ParkingSpot s left join fetch s.tenant where s.association = ?1 order by s.kind, s.name")
+    List<ParkingSpot> findAllWithTenant(se.kvarteri.models.Association association);
 
     /** Locks the row so queue/assign/terminate on the same spot are serialized. */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select s from ParkingSpot s left join fetch s.tenant where s.id = ?1")
-    Optional<ParkingSpot> findByIdForUpdate(UUID id);
+    @Query("select s from ParkingSpot s left join fetch s.tenant where s.id = ?1 and s.association = ?2")
+    Optional<ParkingSpot> findByIdForUpdate(UUID id, se.kvarteri.models.Association association);
 
     List<ParkingSpot> findByTenant(se.kvarteri.models.Resident tenant);
 }

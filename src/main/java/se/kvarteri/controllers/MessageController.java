@@ -31,7 +31,7 @@ public class MessageController {
 
     @GetMapping
     List<MessageResponse> mine(Authentication auth) {
-        return messages.findVisibleTo(currentUser.get(auth)).stream().map(MessageResponse::of).toList();
+        return messages.findVisibleTo(currentUser.get(auth).getAssociation(), currentUser.get(auth)).stream().map(MessageResponse::of).toList();
     }
 
     /** Board members/admins only (enforced in SecurityConfig). */
@@ -41,17 +41,19 @@ public class MessageController {
         Message m = new Message();
         m.setTitle(req.title());
         m.setBody(req.body());
-        m.setAuthor(currentUser.get(auth));
+        Resident me = currentUser.get(auth);
+        m.setAuthor(me);
         if (req.recipientId() != null) {
             Resident rec = residents.findById(req.recipientId())
                     .orElseThrow(() -> new NotFoundException("Recipient not found"));
+            if (!CurrentUser.sameAssociation(rec, me)) throw new NotFoundException("Recipient not found");
             m.setRecipient(rec);
         }
         m = messages.save(m);
         if (m.getRecipient() != null) {
             notifications.notify(m.getRecipient(), "Nytt meddelande från " + m.getAuthor().getName() + ": " + m.getTitle());
         } else {
-            notifications.notifyRole(Role.RESIDENT, "Nytt meddelande från styrelsen: " + m.getTitle());
+            notifications.notifyRole(me.getAssociation(), Role.RESIDENT, "Nytt meddelande från styrelsen: " + m.getTitle());
         }
         return MessageResponse.of(m);
     }

@@ -39,7 +39,7 @@ public class BookingService {
         if (!BookingUtil.isValidPeriod(start, end, LocalDateTime.now(clock), MAX_DAYS_AHEAD, MAX_LENGTH)) {
             throw new IllegalArgumentException("Invalid booking period");
         }
-        lockResource(type, resourceId);
+        lockResource(type, resourceId, me);
         if (bookings.existsByResourceTypeAndResourceIdAndStartTimeLessThanAndEndTimeGreaterThan(
                 type, resourceId, end, start)) {
             throw new ConflictException("That time is already booked");
@@ -55,31 +55,34 @@ public class BookingService {
 
     @Transactional(readOnly = true)
     public List<BookingResponse> upcoming(ResourceType type, UUID resourceId, Resident me) {
-        lockFreeExists(type, resourceId);
+        lockFreeExists(type, resourceId, me);
         return bookings.findByResourceTypeAndResourceIdAndEndTimeAfterOrderByStartTime(
                 type, resourceId, LocalDateTime.now(clock)).stream().map(b -> view(b, me)).toList();
     }
 
     public void cancel(UUID bookingId, Resident me) {
         Booking b = bookings.findById(bookingId).orElseThrow(() -> new NotFoundException("Booking not found"));
+        if (!CurrentUser.sameAssociation(b.getResident(), me)) {
+            throw new NotFoundException("Booking not found");
+        }
         if (!b.getResident().getId().equals(me.getId()) && !CurrentUser.isStaff(me)) {
             throw new AccessDeniedException("Not your booking");
         }
         bookings.delete(b);
     }
 
-    private void lockResource(ResourceType type, UUID id) {
+    private void lockResource(ResourceType type, UUID id, Resident me) {
         boolean found = switch (type) {
-            case COMMUNITY_ROOM -> rooms.findByIdForUpdate(id).isPresent();
-            case LAUNDRY -> laundries.findByIdForUpdate(id).isPresent();
+            case COMMUNITY_ROOM -> rooms.findByIdForUpdate(id, me.getAssociation()).isPresent();
+            case LAUNDRY -> laundries.findByIdForUpdate(id, me.getAssociation()).isPresent();
         };
         if (!found) throw new NotFoundException("Resource not found");
     }
 
-    private void lockFreeExists(ResourceType type, UUID id) {
+    private void lockFreeExists(ResourceType type, UUID id, Resident me) {
         boolean found = switch (type) {
-            case COMMUNITY_ROOM -> rooms.existsById(id);
-            case LAUNDRY -> laundries.existsById(id);
+            case COMMUNITY_ROOM -> rooms.existsByIdAndAssociation(id, me.getAssociation());
+            case LAUNDRY -> laundries.existsByIdAndAssociation(id, me.getAssociation());
         };
         if (!found) throw new NotFoundException("Resource not found");
     }

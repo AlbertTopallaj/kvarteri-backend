@@ -12,8 +12,8 @@ import java.util.UUID;
 
 public interface SpotQueueEntryRepository extends JpaRepository<SpotQueueEntry, UUID> {
 
-    @Query("select q from SpotQueueEntry q join fetch q.resident join fetch q.spot order by q.createdAt, q.id")
-    List<SpotQueueEntry> findAllOrdered();
+    @Query("select q from SpotQueueEntry q join fetch q.resident join fetch q.spot where q.spot.association = ?1 order by q.createdAt, q.id")
+    List<SpotQueueEntry> findAllOrdered(se.kvarteri.models.Association association);
 
     @Query("select q from SpotQueueEntry q join fetch q.resident where q.spot = ?1 order by q.createdAt, q.id")
     List<SpotQueueEntry> findBySpotOrdered(ParkingSpot spot);

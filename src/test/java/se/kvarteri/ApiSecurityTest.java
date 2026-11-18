@@ -28,11 +28,14 @@ class ApiSecurityTest {
     @Autowired se.kvarteri.repositories.MessageRepository messages;
     @Autowired se.kvarteri.repositories.NotificationRepository notificationRepo;
     @Autowired PasswordEncoder encoder;
+    @Autowired se.kvarteri.repositories.AssociationRepository associations;
+    se.kvarteri.models.Association assoc;
     MockMvc mvc;
 
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(ctx).apply(springSecurity()).build();
+        assoc = newAssociation();
         notificationRepo.deleteAll();
         messages.deleteAll();
         residents.deleteAll();
@@ -41,12 +44,19 @@ class ApiSecurityTest {
         save("admin@test.se", Role.ADMIN);
     }
 
+    private se.kvarteri.models.Association newAssociation() {
+        se.kvarteri.models.Association a = new se.kvarteri.models.Association();
+        a.setName("Test-" + java.util.UUID.randomUUID());
+        return associations.save(a);
+    }
+
     private void save(String email, Role role) {
         Resident r = new Resident();
         r.setEmail(email);
         r.setName(email);
         r.setPasswordHash(encoder.encode("password123"));
         r.setRole(role);
+        r.setAssociation(assoc);
         residents.save(r);
     }
 

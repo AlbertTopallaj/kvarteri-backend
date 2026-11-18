@@ -21,6 +21,7 @@ public class ResidentService {
     private final SpotQueueEntryRepository queue;
     private final BookingRepository bookings;
     private final NotificationRepository notifications;
+    private final WarningRepository warnings;
     private final PasswordEncoder encoder;
 
     /**
@@ -35,6 +36,7 @@ public class ResidentService {
         queue.deleteByResident(r);
         bookings.deleteByResident(r);
         notifications.deleteByRecipient(r);
+        warnings.deleteByResident(r);
         r.setEnabled(false);
         r.setName("Borttagen användare");
         r.setApartmentNumber(null);

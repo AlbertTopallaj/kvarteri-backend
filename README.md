@@ -41,6 +41,14 @@ Environment variables: `DB_URL`, `DB_USER`, `DB_PASSWORD`, `DDL_AUTO` (default `
 | `GET/POST /api/tickets/{id}/replies` | ticket creator, BOARD_MEMBER, ADMIN |
 | `GET /api/parking-spots`; `POST/DELETE /api/parking-spots/{id}/queue` | authenticated |
 | `POST /api/parking-spots`, `DELETE`/`PATCH /api/parking-spots/{id}`, `POST /{id}/assign` or `/terminate`, `GET /api/residents` | BOARD_MEMBER, ADMIN |
+| `GET/POST /api/admin/associations`; `GET /api/admin/residents?associationId=` | ADMIN |
+| `DELETE /api/residents/{id}`, `POST/GET /api/residents/{id}/warnings` | BOARD_MEMBER (own association, RESIDENT accounts only), ADMIN (anyone) |
+| `GET /api/me/warnings` | authenticated |
+
+Every user belongs to one association. Rooms, laundries, parking spots, tickets, messages, residents and bookings are
+only visible within the user's own association; other associations' data answers 404. ADMIN creates associations and
+accounts in any of them (`associationId`, default: the admin's own). Existing data is migrated into a default
+association (`Standardförening`).
 
 Login is throttled: 5 failed attempts per client ip + username gives 429 for 15 minutes (in-memory, per instance).
 Bookings are time slots (max 12 h, up to 60 days ahead); overlapping bookings give 409.

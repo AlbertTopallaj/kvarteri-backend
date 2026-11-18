@@ -6,8 +6,10 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import se.kvarteri.models.Association;
 import se.kvarteri.models.Resident;
 import se.kvarteri.models.Role;
+import se.kvarteri.repositories.AssociationRepository;
 import se.kvarteri.repositories.ResidentRepository;
 
 /** Creates the first admin from KVARTERI_ADMIN_EMAIL / KVARTERI_ADMIN_PASSWORD if no admin exists. */
@@ -16,15 +18,20 @@ import se.kvarteri.repositories.ResidentRepository;
 class AdminBootstrap implements ApplicationRunner {
 
     private final ResidentRepository residents;
+    private final AssociationRepository associations;
     private final PasswordEncoder encoder;
+    private final String associationName;
     private final String email;
     private final String password;
 
-    AdminBootstrap(ResidentRepository residents, PasswordEncoder encoder,
+    AdminBootstrap(ResidentRepository residents, AssociationRepository associations, PasswordEncoder encoder,
+                   @Value("${kvarteri.admin.association:Standardförening}") String associationName,
                    @Value("${kvarteri.admin.email:}") String email,
                    @Value("${kvarteri.admin.password:}") String password) {
         this.residents = residents;
+        this.associations = associations;
         this.encoder = encoder;
+        this.associationName = associationName;
         this.email = email;
         this.password = password;
     }
@@ -42,6 +49,11 @@ class AdminBootstrap implements ApplicationRunner {
         admin.setPasswordHash(encoder.encode(password));
         admin.setName("Admin");
         admin.setRole(Role.ADMIN);
+        admin.setAssociation(associations.findByNameIgnoreCase(associationName).orElseGet(() -> {
+            Association a = new Association();
+            a.setName(associationName);
+            return associations.save(a);
+        }));
         residents.save(admin);
         log.info("Created initial admin account");
     }

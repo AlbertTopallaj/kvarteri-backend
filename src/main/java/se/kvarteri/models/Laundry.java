@@ -23,4 +23,8 @@ public class Laundry {
     @NotBlank
     @Column(nullable = false)
     private String name;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "association_id", nullable = false)
+    private Association association;
 }

@@ -17,12 +17,33 @@ public final class Dtos {
             @NotBlank @Size(min = 10, max = 72) String password,
             @NotBlank @Size(max = 100) String name,
             @Size(max = 20) String apartmentNumber,
-            @NotNull Role role) {
+            @NotNull Role role,
+            UUID associationId) {
     }
 
-    public record ResidentResponse(UUID id, String email, String name, String apartmentNumber, Role role) {
+    public record AssociationView(UUID id, String name) {
+        public static AssociationView of(Association a) {
+            return new AssociationView(a.getId(), a.getName());
+        }
+    }
+
+    public record CreateAssociationRequest(@NotBlank @Size(max = 100) String name) {
+    }
+
+    public record WarningRequest(@NotBlank @Size(max = 1000) String reason) {
+    }
+
+    public record WarningResponse(UUID id, String reason, String issuedBy, LocalDateTime createdAt) {
+        public static WarningResponse of(Warning w) {
+            return new WarningResponse(w.getId(), w.getReason(), w.getIssuedBy().getName(), w.getCreatedAt());
+        }
+    }
+
+    public record ResidentResponse(UUID id, String email, String name, String apartmentNumber, Role role,
+                                   AssociationView association) {
         public static ResidentResponse of(Resident r) {
-            return new ResidentResponse(r.getId(), r.getEmail(), r.getName(), r.getApartmentNumber(), r.getRole());
+            return new ResidentResponse(r.getId(), r.getEmail(), r.getName(), r.getApartmentNumber(), r.getRole(),
+                    AssociationView.of(r.getAssociation()));
         }
     }
 
@@ -75,10 +96,11 @@ public final class Dtos {
         }
     }
 
-    public record RoomRequest(@NotBlank @Size(max = 100) String name, @Min(0) int price, @Min(1) int capacity) {
+    public record RoomRequest(@NotBlank @Size(max = 100) String name, @Min(0) int price, @Min(1) int capacity,
+                              UUID associationId) {
     }
 
-    public record LaundryRequest(@NotBlank @Size(max = 100) String name) {
+    public record LaundryRequest(@NotBlank @Size(max = 100) String name, UUID associationId) {
     }
 
     public record ResourceView(UUID id, String name, int price, boolean taken, boolean mine) {

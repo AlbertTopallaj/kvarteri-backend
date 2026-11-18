@@ -19,6 +19,11 @@ public class CurrentUser {
                 .orElseThrow(() -> new NotFoundException("User not found"));
     }
 
+    /** True if both users belong to the same association. */
+    public static boolean sameAssociation(Resident a, Resident b) {
+        return a.getAssociation().getId().equals(b.getAssociation().getId());
+    }
+
     public static boolean isStaff(Resident r) {
         return r.getRole() == Role.BOARD_MEMBER || r.getRole() == Role.ADMIN;
     }

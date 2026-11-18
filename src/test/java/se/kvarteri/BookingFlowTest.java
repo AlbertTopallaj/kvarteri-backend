@@ -33,6 +33,8 @@ class BookingFlowTest {
     @Autowired ParkingSpotRepository parkings;
     @Autowired SpotQueueEntryRepository spotQueue;
     @Autowired PasswordEncoder encoder;
+    @Autowired se.kvarteri.repositories.AssociationRepository associations;
+    se.kvarteri.models.Association assoc;
     MockMvc mvc;
     CommunityRoom room;
 
@@ -52,6 +54,7 @@ class BookingFlowTest {
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.webAppContextSetup(ctx).apply(springSecurity()).build();
+        assoc = newAssociation();
         bookings.deleteAll();
         replies.deleteAll();
         notificationRepo.deleteAll();
@@ -68,7 +71,14 @@ class BookingFlowTest {
         room = new CommunityRoom();
         room.setName("Party room");
         room.setCapacity(20);
+        room.setAssociation(assoc);
         room = rooms.save(room);
+    }
+
+    private se.kvarteri.models.Association newAssociation() {
+        se.kvarteri.models.Association a = new se.kvarteri.models.Association();
+        a.setName("Test-" + java.util.UUID.randomUUID());
+        return associations.save(a);
     }
 
     private void save(String email, Role role) {
@@ -77,6 +87,7 @@ class BookingFlowTest {
         r.setName(email);
         r.setPasswordHash(encoder.encode("password123"));
         r.setRole(role);
+        r.setAssociation(assoc);
         residents.save(r);
     }
 

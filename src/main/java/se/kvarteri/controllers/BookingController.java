@@ -27,14 +27,14 @@ public class BookingController {
     private final LaundryRepository laundries;
 
     @GetMapping("/communityrooms")
-    List<ResourceView> listRooms() {
-        return rooms.findAll().stream()
+    List<ResourceView> listRooms(Authentication auth) {
+        return rooms.findByAssociationOrderByNameAsc(currentUser.get(auth).getAssociation()).stream()
                 .map(r -> new ResourceView(r.getId(), r.getName(), r.getPrice(), false, false)).toList();
     }
 
     @GetMapping("/laundries")
-    List<ResourceView> listLaundries() {
-        return laundries.findAll().stream()
+    List<ResourceView> listLaundries(Authentication auth) {
+        return laundries.findByAssociationOrderByNameAsc(currentUser.get(auth).getAssociation()).stream()
                 .map(l -> new ResourceView(l.getId(), l.getName(), 0, false, false)).toList();
     }
 

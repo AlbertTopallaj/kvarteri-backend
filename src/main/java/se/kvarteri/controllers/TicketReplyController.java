@@ -54,7 +54,8 @@ public class TicketReplyController {
 
     private Ticket accessible(UUID id, Resident me) {
         Ticket t = tickets.findById(id).orElseThrow(() -> new NotFoundException("Ticket not found"));
-        if (!CurrentUser.isStaff(me) && !t.getCreatedBy().getId().equals(me.getId())) {
+        if (!CurrentUser.sameAssociation(t.getCreatedBy(), me)
+                || (!CurrentUser.isStaff(me) && !t.getCreatedBy().getId().equals(me.getId()))) {
             // Same response as a missing ticket so ids cannot be probed.
             throw new NotFoundException("Ticket not found");
         }
